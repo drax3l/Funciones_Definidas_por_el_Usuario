@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funciones UDF en SQL Server - Taller 3.3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a237e 0%, #4a148c 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .poster-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        /* Encabezado */
+        .header {
+            background: linear-gradient(90deg, #d32f2f 0%, #b71c1c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            transform: rotate(30deg);
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .year-banner {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            color: #ffeb3b;
+        }
+        
+        .university {
+            font-size: 2.1rem;
+            font-weight: 900;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .faculty {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            opacity: 0.95;
+        }
+
+        .course-line {
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .workshop-title {
+            background: rgba(0, 0, 0, 0.25);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 25px;
+            border-radius: 999px;
+            margin-top: 15px;
+            font-size: 1.3rem;
+            border: 2px solid rgba(255,255,255,0.8);
+        }
+
+        .workshop-title i {
+            font-size: 1.4rem;
+        }
+
+        .subtag {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+        
+        /* Contenido Principal */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 30px;
+            padding: 35px 40px 30px 40px;
+        }
+        
+        .section {
+            background: #f5f5f5;
+            border-radius: 15px;
+            padding: 22px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .section:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .section-title {
+            color: #d32f2f;
+            border-bottom: 3px solid #d32f2f;
+            padding-bottom: 7px;
+            margin-bottom: 15px;
+            font-size: 1.35rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            font-size: 1.5rem;
+        }
+        
+        .section-content {
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+        
+        .section-content ul {
+            padding-left: 18px;
+            margin: 12px 0;
+        }
+        
+        .section-content li {
+            margin-bottom: 7px;
+        }
+
+        .highlight {
+            background: #fffde7;
+            border-left: 4px solid #ffb300;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-top: 5px;
+            font-size: 0.95rem;
+        }
+        
+        /* Tarjetas de información */
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin-top: 10px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 14px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            border-top: 4px solid #4a148c;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+        }
+        
+        .card-icon {
+            font-size: 2rem;
+            color: #d32f2f;
+            margin-bottom: 8px;
+        }
+        
+        .card-title {
+            font-weight: bold;
+            color: #4a148c;
+            margin-bottom: 6px;
+            font-size: 1.05rem;
+        }
+
+        /* Tabla resumen de funciones */
+        .functions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .functions-table th, 
+        .functions-table td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            text-align: left;
+        }
+
+        .functions-table th {
+            background: #ede7f6;
+            color: #4a148c;
+            font-weight: 600;
+        }
+
+        .functions-table tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .functions-table .type-scalar {
+            color: #d32f2f;
+            font-weight: 600;
+        }
+
+        .functions-table .type-table {
+            color: #2e7d32;
+            font-weight: 600;
+        }
+
+        /* Ejemplos de código */
+        .code-examples {
+            margin-top: 10px;
+        }
+        
+        .code-container {
+            background: #262626;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        
+        .code-container pre {
+            color: #f8f8f2;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+            font-size: 0.9rem;
+        }
+        
+        .keyword { color: #ff79c6; }
+        .function { color: #50fa7b; }
+        .string { color: #f1fa8c; }
+        .comment { color: #6272a4; }
+        .number { color: #bd93f9; }
+
+        .pill {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            background: #e3f2fd;
+            color: #1565c0;
+            margin-left: 5px;
+        }
+
+        .pill-warning {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        
+        /* Información del equipo */
+        .team-info {
+            background: linear-gradient(90deg, #4a148c 0%, #6a1b9a 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 22px;
+            margin: 15px 40px 5px 40px;
+        }
+        
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 12px;
+        }
+        
+        .team-member {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .team-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        /* Footer */
+        .footer {
+            background: #1a237e;
+            color: white;
+            text-align: center;
+            padding: 18px;
+            font-size: 1rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                padding: 25px 20px;
+            }
+            
+            .full-width {
+                grid-column: span 1;
+            }
+            
+            .info-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .team-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease forwards;
+        }
+        
+        .delay-1 { animation-delay: 0.15s; opacity: 0; }
+        .delay-2 { animation-delay: 0.3s; opacity: 0; }
+        .delay-3 { animation-delay: 0.45s; opacity: 0; }
+        .delay-4 { animation-delay: 0.6s; opacity: 0; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="poster-container">
+        <!-- Encabezado -->
+        <header class="header">
+            <div class="header-content">
+                <div class="year-banner">"Año de la recuperación y consolidación de la economía peruana"</div>
+                <div class="university">Universidad Andina del Cusco</div>
+                <div class="faculty">Facultad de Ingeniería y Arquitectura</div>
+                <div class="course-line">Escuela Profesional de Ingeniería de Sistemas</div>
+                
+                <div class="workshop-title">
+                    <i class="fas fa-database"></i>
+                    Taller 3.3 · Funciones Definidas por el Usuario (UDF)
+                </div>
+                <div class="subtag">
+                    Base de datos: <strong>Northwind – SQL Server</strong>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Contenido Principal -->
+        <main class="main-content">
+            <!-- Sección 1: Introducción -->
+            <section class="section fade-in">
+                <h2 class="section-title">
+                    <i class="fas fa-info-circle"></i> Introducción: ¿Qué son las UDFs?
+                </h2>
+                <div class="section-content">
+                    <p>
+                        Las <strong>Funciones Definidas por el Usuario (UDFs)</strong> en SQL Server son bloques de código T-SQL reutilizables 
+                        que reciben parámetros y retornan un resultado (un valor o una tabla).
+                    </p>
+                    <div class="highlight">
+                        <strong>¿Por qué son importantes?</strong>
+                        <ul>
+                            <li>Permiten <strong>modularizar</strong> la lógica de negocio.</li>
+                            <li>Simplifican consultas complejas y las hacen más legibles.</li>
+                            <li>Facilitan la <strong>reutilización</strong> en múltiples consultas o reportes.</li>
+                            <li>Ayudan a mantener y estandarizar reglas de negocio dentro de la base de datos.</li>
+                        </ul>
+                    </div>
+                    <p style="margin-top: 8px;">
+                        En este taller desarrollamos <strong>10 UDFs</strong> sobre la base de datos <strong>Northwind</strong>, 
+                        incluyendo funciones escalares, de tabla inline y de tabla multi–sentencia.
+                    </p>
+                </div>
+            </section>
+            
+            <!-- Sección 2: Objetivos -->
+            <section class="section fade-in delay-1">
+                <h2 class="section-title">
+                    <i class="fas fa-bullseye"></i> Objetivos del Taller
+                </h2>
+                <div class="section-content">
+                    <ul>
+                        <li>Diseñar e implementar <strong>funciones UDF</strong> en SQL Server usando T-SQL.</li>
+                        <li>Diferenciar entre <strong>funciones escalares</strong> y <strong>funciones de tabla</strong>.</li>
+                        <li>Aplicar UDFs para resolver problemas reales en la base de datos <strong>Northwind</strong>.</li>
+                        <li>Preparar un <strong>script .sql</strong> único con las 10 funciones y sus pruebas.</li>
+                        <li>Documentar la solución mediante un <strong>informe técnico</strong> y evidencias de ejecución.</li>
+                    </ul>
+                    <div class="highlight">
+                        Este póster resume los puntos clave que presentamos en el informe: 
+                        <strong>introducción, arquitectura, descripción de funciones y aprendizajes.</strong>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tarjetas informativas -->
+            <div class="section full-width fade-in delay-1">
+                <h2 class="section-title">
+                    <i class="fas fa-layer-group"></i> Tipos de Funciones Implementadas
+                </h2>
+                <div class="info-cards">
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <div class="card-title">Funciones Escalares</div>
+                        <p>Retornan un <strong>único valor</strong> (texto, número, fecha).<br>Ejemplos: cálculos, validaciones, formateo.</p>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-table"></i>
+                        </div>
+                        <div class="card-title">Funciones de Tabla (Inline)</div>
+                        <p>Retornan una <strong>tabla derivada</strong> basada en una sola consulta SELECT.</p>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-list-check"></i>
+                        </div>
+                        <div class="card-title">Funciones de Tabla (Multi)</div>
+                        <p>Construyen una tabla paso a paso usando varias sentencias dentro de la función.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección resumen de las 10 funciones -->
+            <section class="section full-width fade-in delay-2">
+                <h2 class="section-title">
+                    <i class="fas fa-list-ol"></i> Resumen de las 10 Funciones UDF (Northwind)
+                </h2>
+                <div class="section-content">
+                    <table class="functions-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nombre de la función</th>
+                                <th>Tipo</th>
+                                <th>Descripción (simplificada para la expo)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>CalcularTotalPedido</td>
+                                <td class="type-scalar">Scalar</td>
+                                <td>Calcula el total de un pedido usando precio, cantidad y descuento.</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>NombreCompletoEmpleado</td>
+                                <td class="type-scalar">Scalar</td>
+                                <td>Devuelve el nombre completo formateado de un empleado.</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>ValidarEstadoPedido</td>
+                                <td class="type-scalar">Scalar</td>
+                                <td>Indica si un pedido está pendiente, tardío o a tiempo según fechas.</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>CalcularDescuentoVolumen</td>
+                                <td class="type-scalar">Scalar</td>
+                                <td>Asigna un porcentaje de descuento según la cantidad comprada.</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>DeterminarNivelCliente</td>
+                                <td class="type-scalar">Scalar</td>
+                                <td>Clasifica al cliente como Nuevo, Bronce, Plata, Oro o Platino según sus compras.</td>
+                            </tr>
+                            <tr>
+                                <td>6</td>
+                                <td>ProductosPorCategoria</td>
+                                <td class="type-table">Table Inline</td>
+                                <td>Lista los productos de una categoría, con nombre, precio y stock.</td>
+                            </tr>
+                            <tr>
+                                <td>7</td>
+                                <td>PedidosClientePeriodo</td>
+                                <td class="type-table">Table Inline</td>
+                                <td>Muestra los pedidos de un cliente en un rango de fechas con su total.</td>
+                            </tr>
+                            <tr>
+                                <td>8</td>
+                                <td>ProductosPorProveedor</td>
+                                <td class="type-table">Table Inline</td>
+                                <td>Devuelve los productos que pertenecen a un proveedor específico.</td>
+                            </tr>
+                            <tr>
+                                <td>9</td>
+                                <td>VentasDetalleEmpleado</td>
+                                <td class="type-table">Table Multi</td>
+                                <td>Resumen de ventas por empleado: total vendido, pedidos y promedio.</td>
+                            </tr>
+                            <tr>
+                                <td>10</td>
+                                <td>DetalleCompletoPedido</td>
+                                <td class="type-table">Table Multi</td>
+                                <td>Detalle del pedido: productos, cantidad, descuento y subtotal.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p style="margin-top: 8px; font-size: 0.9rem;">
+                        Cada función cuenta con un <strong>SELECT de prueba</strong> para validar su funcionamiento en SQL Server.
+                    </p>
+                </div>
+            </section>
+            
+            <!-- Sección 3: Ejemplos de Funciones -->
+            <section class="section full-width fade-in delay-2">
+                <h2 class="section-title">
+                    <i class="fas fa-code"></i> Ejemplos de Código para la Expo
+                </h2>
+                
+                <div class="code-examples">
+                    <p><strong>Ejemplo de función escalar:</strong> <span class="pill">CalcularTotalPedido</span></p>
+                    <div class="code-container">
+<pre><code><span class="keyword">CREATE OR ALTER FUNCTION</span> <span class="function">CalcularTotalPedido</span> (@OrderID <span class="keyword">INT</span>)
+<span class="keyword">RETURNS DECIMAL</span>(10,2)
+<span class="keyword">AS</span> 
+<span class="keyword">BEGIN</span>
+    <span class="keyword">DECLARE</span> @Total <span class="keyword">DECIMAL</span>(10,2);
+    
+    <span class="keyword">SELECT</span> @Total = <span class="function">SUM</span>(UnitPrice * Quantity * (1 - Discount))
+    <span class="keyword">FROM</span> [Order Details]
+    <span class="keyword">WHERE</span> OrderID = @OrderID;
+    
+    <span class="keyword">RETURN</span> <span class="function">ISNULL</span>(@Total, 0);
+<span class="keyword">END</span>;
+<span class="comment">-- Prueba:  SELECT dbo.CalcularTotalPedido(10248) AS TotalPedido;</span></code></pre>
+                    </div>
+                </div>
+
+                <div class="code-examples" style="margin-top: 12px;">
+                    <p><strong>Ejemplo de función de tabla (inline):</strong> <span class="pill">ProductosPorCategoria</span></p>
+                    <div class="code-container">
+<pre><code><span class="keyword">CREATE OR ALTER FUNCTION</span> <span class="function">ProductosPorCategoria</span> (@CategoryID <span class="keyword">INT</span>)
+<span class="keyword">RETURNS TABLE</span>
+<span class="keyword">AS</span>
+<span class="keyword">RETURN</span>
+(
+    <span class="keyword">SELECT</span> 
+        p.ProductID,
+        p.ProductName,
+        p.UnitPrice,
+        p.UnitsInStock,
+        c.CategoryName
+    <span class="keyword">FROM</span> Products p
+    <span class="keyword">JOIN</span> Categories c <span class="keyword">ON</span> p.CategoryID = c.CategoryID
+    <span class="keyword">WHERE</span> p.CategoryID = @CategoryID
+);
+<span class="comment">-- Prueba:  SELECT * FROM dbo.ProductosPorCategoria(1);</span></code></pre>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Sección 4: Arquitectura -->
+            <section class="section fade-in delay-3">
+                <h2 class="section-title">
+                    <i class="fas fa-network-wired"></i> Arquitectura de Conexión</h2>
+                <div class="section-content">
+                    <p>El taller se planteó para trabajar con <strong>tres bases de datos</strong> en diferentes entornos:</p>
+                    <ul>
+                        <li><strong>Northwind</strong> · Instancia local de SQL Server (funciones UDF del taller).</li>
+                        <li><strong>Pubs</strong> · Base de datos en un servidor de datacenter (conexión remota).</li>
+                        <li><strong>AdventureWorks</strong> · Base de datos en la nube (ej. Azure / somee.com).</li>
+                    </ul>
+                    <div class="highlight">
+                        Para este entregable, nos centramos en las funciones sobre <strong>Northwind</strong>, 
+                        pero la arquitectura permite extender la lógica a otras bases con la misma idea de UDFs.
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Sección 5: Aprendizajes -->
+            <section class="section fade-in delay-4">
+                <h2 class="section-title">
+                    <i class="fas fa-graduation-cap"></i> Conclusiones y Aprendizajes</h2>
+                <div class="section-content">
+                    <ul>
+                        <li>Consolidamos el uso de <strong>T-SQL</strong> para crear funciones reutilizables.</li>
+                        <li>Comprendimos cuándo conviene usar <strong>funciones escalares</strong> y cuándo <strong>funciones de tabla</strong>.</li>
+                        <li>Vimos que una buena <strong>documentación</strong> (comentarios, ejemplos de uso) facilita la lectura del código.</li>
+                        <li>Comprobamos la importancia de realizar <strong>pruebas unitarias</strong> con SELECT específicos por función.</li>
+                        <li>Identificamos cómo las UDFs ayudan a centralizar la lógica de negocio dentro de la base de datos.</li>
+                    </ul>
+                    <div class="highlight pill-warning">
+                        Estas ideas se desarrollan con más detalle en el <strong>Informe Técnico (.pdf)</strong> 
+                        y en el <strong>script .sql</strong> con las 10 funciones y sus pruebas.
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Información del Equipo -->
+        <section class="team-info fade-in delay-4">
+            <h2 class="section-title" style="color: white; border-color: white;">
+                <i class="fas fa-users"></i> Equipo de Trabajo
+            </h2>
+            <div class="section-content">
+                <p class="team-label"><strong>Asignatura:</strong> Modelado de Base de Datos</p>
+                <p class="team-label"><strong>Docente:</strong> Espetia Huamanga Hugo</p>
+                
+                <div class="team-grid">
+                    <div class="team-member">
+                        <strong>ANDIA PALOMINO RODRIGO</strong><br>
+                        Código: 023100172b
+                    </div>
+                    <div class="team-member">
+                        <strong>QUISPE SIERRA ALEX JEANPIER</strong><br>
+                        Código: 022200823f
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="footer fade-in delay-4">
+            <p>© 2024 - Universidad Andina del Cusco - Facultad de Ingeniería y Arquitectura</p>
+            <p style="margin-top: 5px; font-size: 0.9rem; opacity: 0.85;">
+                Taller 3.3 · Funciones Definidas por el Usuario (UDF) en SQL Server
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Efecto de aparición gradual
+        document.addEventListener('DOMContentLoaded', function() {
+            const fadeElements = document.querySelectorAll('.fade-in');
+            fadeElements.forEach(element => {
+                element.style.opacity = '0';
+            });
+            setTimeout(() => {
+                fadeElements.forEach(element => {
+                    element.style.opacity = '1';
+                });
+            }, 150);
+        });
+    </script>
+</body>
+</html>
